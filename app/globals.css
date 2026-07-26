@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-void text-white font-body antialiased;
+    background-image: theme('backgroundImage.grid-lines');
+    background-size: theme('backgroundSize.grid');
+  }
+
+  ::selection {
+    @apply bg-violet/40 text-white;
+  }
+
+  * {
+    @apply border-white/10;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-void;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-violet-dim rounded-full;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/[0.03] backdrop-blur-xl border border-white/10;
+  }
+
+  .glass-strong {
+    @apply bg-ink/60 backdrop-blur-2xl border border-white/10;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-violet-bright via-violet to-cyan;
+  }
+
+  /* Signature HUD reticle-lock: corner brackets that snap in on hover */
+  .reticle {
+    position: relative;
+  }
+  .reticle::before,
+  .reticle::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+  }
+  .reticle::before {
+    top: -1px;
+    left: -1px;
+    border-top: 2px solid theme('colors.cyan.DEFAULT');
+    border-left: 2px solid theme('colors.cyan.DEFAULT');
+    transform: translate(6px, 6px);
+  }
+  .reticle::after {
+    bottom: -1px;
+    right: -1px;
+    border-bottom: 2px solid theme('colors.violet.bright');
+    border-right: 2px solid theme('colors.violet.bright');
+    transform: translate(-6px, -6px);
+  }
+  .reticle:hover::before,
+  .reticle:hover::after {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
+}
