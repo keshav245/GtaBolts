@@ -38,9 +38,15 @@ The `PurchasePanel`'s `handleBuyNow` is a stub (`setTimeout`) — wire it to you
 - `/library` — owned mods grid (`OwnedModCard` with a Download button) + download history table. Currently reads from `lib/library-data.ts` mock data; the page has a `TODO` comment for adding the auth guard (middleware or `supabase.auth.getUser()` redirect) and swapping in a real Supabase query scoped to the signed-in user.
 - Both pages are pure UI — no session state is created yet, so `/library` is not actually protected until you wire the auth check back in.
 
-## Next phases (ask Claude to continue)
+## Phase 4 additions
 
-- `/dashboard` (Employee) — upload/edit mods, per-mod stats, draft vs published
-- `/admin` (Owner) — role management, mod moderation, employee audit, revenue overview, user directory
+- `/dashboard` (Employee console) — sidebar layout (`components/dashboard/Sidebar.tsx`), stat cards with inline SVG sparklines (no chart library dependency), and a mods data table with inline publish/unpublish and delete-draft actions.
+- `/dashboard/upload` — mod upload form: title (auto-slugifies), slug (editable), description, price, category, a screenshot multi-upload grid with previews, and a drag-and-drop mod-file dropzone with an animated circular progress ring.
+- `lib/dashboard-data.ts` — mock employee mods + sparkline series. Swap `EMPLOYEE_MODS` for a real query scoped to `auth.uid()`, and wire the `TODO` comments in `ModsTable.tsx` (publish/unpublish/delete) and `upload/page.tsx` (R2 upload + insert mod row) to real server actions.
+- `UploadDropzone`'s progress is simulated with `setInterval` — swap for real upload progress via `XMLHttpRequest.upload.onprogress` when you wire it to R2 (plain `fetch` doesn't expose upload progress).
+
+## Next phase (ask Claude to continue)
+
+- `/admin` (Owner) — command-palette-style role search with role chips, mod moderation across the platform, employee audit, revenue overview, user directory
 
 Backend logic (Supabase RLS, `private.has_role()`, Razorpay webhook, R2 presigned URLs) is untouched — this is UI only.
