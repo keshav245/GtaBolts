@@ -32,11 +32,15 @@ Redesigned presentation layer — dark cyberpunk/gamer marketplace UI. Phase 1: 
 
 The `PurchasePanel`'s `handleBuyNow` is a stub (`setTimeout`) — wire it to your Razorpay order-creation server action next.
 
+## Phase 3 additions
+
+- `/auth` — sign in / sign up tab toggle, Google OAuth button, email/password form, forgot-password link. `AuthForm.tsx` has `TODO` comments marking exactly where `supabase.auth.signInWithOAuth` / `signInWithPassword` / `signUp` calls go.
+- `/library` — owned mods grid (`OwnedModCard` with a Download button) + download history table. Currently reads from `lib/library-data.ts` mock data; the page has a `TODO` comment for adding the auth guard (middleware or `supabase.auth.getUser()` redirect) and swapping in a real Supabase query scoped to the signed-in user.
+- Both pages are pure UI — no session state is created yet, so `/library` is not actually protected until you wire the auth check back in.
+
 ## Next phases (ask Claude to continue)
 
-- `/auth`
-- `/library`
-- `/dashboard` (Employee)
-- `/admin` (Owner)
+- `/dashboard` (Employee) — upload/edit mods, per-mod stats, draft vs published
+- `/admin` (Owner) — role management, mod moderation, employee audit, revenue overview, user directory
 
 Backend logic (Supabase RLS, `private.has_role()`, Razorpay webhook, R2 presigned URLs) is untouched — this is UI only.
