@@ -22,11 +22,18 @@ Redesigned presentation layer — dark cyberpunk/gamer marketplace UI. Phase 1: 
 - Landing page (`/`): `Hero` (animated mesh gradient), `PurchaseTicker` (mock data — swap for a real Supabase query later), `FeaturedCarousel` (3D tilt cards), `CategoryGrid`.
 - `ModCard` component used across landing/browse/category pages.
 
+## Phase 2 additions
+
+- `lib/mods-data.ts` — shared mock catalog (6 mods). Replace `getAllMods`, `getModBySlug`, `getModsByCategory` with real Supabase queries later; every page below keeps working as long as the function signatures stay the same.
+- `/browse` — client-side search, category filter, price slider, sort (popular/newest/price). Empty state with reset CTA.
+- `/category/:slug` — static per-category page (`generateStaticParams` pre-renders all 4 categories).
+- `/mod/:slug` — split-screen: `MediaGallery` (thumbnail selector) on the left, sticky `PurchasePanel` (price, Buy Now, view/download/rating stats) on the right, description + `Changelog` below.
+- `EmptyState` — reusable illustrated empty state with optional CTA.
+
+The `PurchasePanel`'s `handleBuyNow` is a stub (`setTimeout`) — wire it to your Razorpay order-creation server action next.
+
 ## Next phases (ask Claude to continue)
 
-- `/browse` — full catalog, search, filter, sort
-- `/category/:slug`
-- `/mod/:slug` — split-screen detail + sticky purchase panel
 - `/auth`
 - `/library`
 - `/dashboard` (Employee)
