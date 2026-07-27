@@ -6,7 +6,10 @@ import { X, Loader2 } from 'lucide-react';
 import GlassCard from '@/components/ui/GlassCard';
 import NeonButton from '@/components/ui/NeonButton';
 import UploadDropzone from '@/components/dashboard/UploadDropzone';
+import { useToast } from '@/components/ui/ToastProvider';
+import { uploadToR2 } from '@/lib/upload-client';
 import { CATEGORIES } from '@/lib/mods-data';
+import { createMod } from './actions';
 
 function slugify(text: string) {
   return text
@@ -16,14 +19,24 @@ function slugify(text: string) {
     .replace(/(^-|-$)/g, '');
 }
 
+interface ScreenshotItem {
+  file: File;
+  previewUrl: string;
+  key: string | null;
+  uploading: boolean;
+}
+
 export default function UploadModPage() {
+  const { showToast } = useToast();
+
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState(CATEGORIES[0].name);
-  const [screenshots, setScreenshots] = useState<{ file: File; url: string }[]>([]);
+  const [screenshots, setScreenshots] = useState<ScreenshotItem[]>([]);
+  const [modFileKey, setModFileKey] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<'draft' | 'published' | null>(null);
 
   function handleTitleChange(value: string) {
@@ -33,19 +46,58 @@ export default function UploadModPage() {
 
   function handleScreenshotsChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
-    const withUrls = files.map((file) => ({ file, url: URL.createObjectURL(file) }));
-    setScreenshots((prev) => [...prev, ...withUrls]);
+    const items: ScreenshotItem[] = files.map((file) => ({
+      file,
+      previewUrl: URL.createObjectURL(file),
+      key: null,
+      uploading: true,
+    }));
+    setScreenshots((prev) => [...prev, ...items]);
+
+    items.forEach((item) => {
+      uploadToR2(item.file, 'screenshot')
+        .then(({ key }) => {
+          setScreenshots((prev) => prev.map((s) => (s.file === item.file ? { ...s, key, uploading: false } : s)));
+        })
+        .catch(() => {
+          showToast('error', `Failed to upload ${item.file.name}.`);
+          setScreenshots((prev) => prev.filter((s) => s.file !== item.file));
+        });
+    });
   }
 
   function removeScreenshot(index: number) {
     setScreenshots((prev) => prev.filter((_, i) => i !== index));
   }
 
-  function handleSubmit(status: 'draft' | 'published') {
+  async function handleSubmit(status: 'draft' | 'published') {
+    if (!title || !slug || !price || !modFileKey) {
+      showToast('warning', 'Fill in title, slug, price, and finish uploading the mod file first.');
+      return;
+    }
+    if (screenshots.some((s) => s.uploading)) {
+      showToast('warning', 'Screenshots are still uploading — wait a moment and try again.');
+      return;
+    }
+
     setSubmitting(status);
-    // TODO: upload mod file + screenshots to R2, then insert a row into the mods
-    // table (status = draft|published) via a server action using supabaseAdmin.
-    setTimeout(() => setSubmitting(null), 1200);
+    const result = await createMod({
+      title,
+      slug,
+      description,
+      category,
+      priceInPaise: Math.round(Number(price) * 100),
+      screenshotKeys: screenshots.map((s) => s.key!).filter(Boolean),
+      modFileKey,
+      status,
+    });
+    setSubmitting(null);
+
+    if (result.ok) {
+      showToast('success', result.message);
+    } else {
+      showToast('error', result.message);
+    }
   }
 
   return (
@@ -125,7 +177,12 @@ export default function UploadModPage() {
           <div className="grid grid-cols-4 gap-2 mb-2">
             {screenshots.map((s, i) => (
               <div key={i} className="relative aspect-video rounded-md overflow-hidden group">
-                <Image src={s.url} alt={`Screenshot ${i + 1}`} fill className="object-cover" />
+                <Image src={s.previewUrl} alt={`Screenshot ${i + 1}`} fill className="object-cover" />
+                {s.uploading && (
+                  <div className="absolute inset-0 bg-void/60 flex items-center justify-center">
+                    <Loader2 className="w-4 h-4 animate-spin text-cyan" />
+                  </div>
+                )}
                 <button
                   onClick={() => removeScreenshot(i)}
                   className="absolute top-1 right-1 p-1 rounded bg-void/70 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -142,7 +199,7 @@ export default function UploadModPage() {
           </div>
         </div>
 
-        <UploadDropzone label="Mod file (.zip)" accept=".zip,.rar,.7z" />
+        <UploadDropzone label="Mod file (.zip)" accept=".zip,.rar,.7z" kind="mod" onUploadComplete={setModFileKey} />
 
         <div className="flex gap-3 pt-2">
           <NeonButton variant="secondary" onClick={() => handleSubmit('draft')} disabled={submitting !== null}>

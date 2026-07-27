@@ -1,20 +1,77 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Eye, Download, Star, ShieldCheck, Loader2 } from 'lucide-react';
 import GlassCard from '@/components/ui/GlassCard';
 import NeonButton from '@/components/ui/NeonButton';
+import { useToast } from '@/components/ui/ToastProvider';
 import { formatPrice, formatCount } from '@/lib/utils';
 import { ModDetail } from '@/lib/mods-data';
 
+declare global {
+  interface Window {
+    Razorpay: new (options: Record<string, unknown>) => { open: () => void };
+  }
+}
+
+function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (document.getElementById('razorpay-checkout-js')) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.id = 'razorpay-checkout-js';
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
 export default function PurchasePanel({ mod }: { mod: ModDetail }) {
+  const router = useRouter();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  function handleBuyNow() {
+  async function handleBuyNow() {
     setLoading(true);
-    // TODO: replace with Razorpay checkout initiation (server action creates order,
-    // opens Razorpay checkout, webhook verifies signature and grants library access).
-    setTimeout(() => setLoading(false), 1200);
+    try {
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) throw new Error('Could not load the payment checkout — check your connection.');
+
+      const res = await fetch('/api/checkout/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ modSlug: mod.slug }),
+      });
+      const order = await res.json();
+      if (!res.ok) throw new Error(order.error ?? 'Could not start checkout');
+
+      setLoading(false);
+
+      const rzp = new window.Razorpay({
+        key: order.keyId,
+        amount: order.amount,
+        currency: order.currency,
+        order_id: order.orderId,
+        name: 'GTAMods',
+        description: order.modTitle,
+        theme: { color: '#8b5cf6' },
+        handler: () => {
+          // The webhook is the source of truth for granting access — this is
+          // just fast client-side feedback while it processes (usually seconds).
+          showToast('success', 'Payment received — unlocking your download...');
+          router.push('/library');
+        },
+      });
+
+      rzp.open();
+    } catch (err) {
+      showToast('error', err instanceof Error ? err.message : 'Checkout failed');
+      setLoading(false);
+    }
   }
 
   return (
@@ -28,7 +85,7 @@ export default function PurchasePanel({ mod }: { mod: ModDetail }) {
       <NeonButton size="lg" className="w-full mb-4" onClick={handleBuyNow} disabled={loading}>
         {loading ? (
           <span className="flex items-center justify-center gap-2">
-            <Loader2 className="w-4 h-4 animate-spin" /> Processing...
+            <Loader2 className="w-4 h-4 animate-spin" /> Starting checkout...
           </span>
         ) : (
           'Buy now'

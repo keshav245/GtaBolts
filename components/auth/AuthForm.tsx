@@ -1,37 +1,69 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Mail, Lock, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { createClient } from '@/lib/supabase/client';
 import NeonButton from '@/components/ui/NeonButton';
 import GoogleButton from '@/components/auth/GoogleButton';
 
 type Mode = 'sign-in' | 'sign-up';
 
 export default function AuthForm() {
+  const router = useRouter();
+  const supabase = createClient();
   const [mode, setMode] = useState<Mode>('sign-in');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function handleGoogleSignIn() {
+  async function handleGoogleSignIn() {
     setLoading(true);
-    // TODO: supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${origin}/auth/callback` } })
-    setTimeout(() => setLoading(false), 1000);
+    setError(null);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+    }
+    // On success, Supabase redirects the browser to Google — no further code runs here.
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    // TODO: mode === 'sign-in'
-    //   ? supabase.auth.signInWithPassword({ email, password })
-    //   : supabase.auth.signUp({ email, password })
-    setTimeout(() => {
-      setLoading(false);
-      setError('Auth isn\u2019t wired up yet \u2014 this is a UI stub.');
-    }, 1000);
+
+    const { error } =
+      mode === 'sign-in'
+        ? await supabase.auth.signInWithPassword({ email, password })
+        : await supabase.auth.signUp({
+            email,
+            password,
+            options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+          });
+
+    setLoading(false);
+
+    if (error) {
+      setError(error.message);
+      return;
+    }
+
+    if (mode === 'sign-up') {
+      setError(null);
+      // Supabase sends a confirmation email by default; adjust in
+      // Authentication → Settings if you want auto-confirm during dev.
+      alert('Check your email to confirm your account.');
+      return;
+    }
+
+    router.push('/');
+    router.refresh();
   }
 
   return (

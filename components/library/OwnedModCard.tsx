@@ -6,16 +6,29 @@ import Link from 'next/link';
 import { Download, Loader2, RotateCw } from 'lucide-react';
 import GlassCard from '@/components/ui/GlassCard';
 import NeonButton from '@/components/ui/NeonButton';
+import { useToast } from '@/components/ui/ToastProvider';
 import { OwnedMod } from '@/lib/library-data';
 
 export default function OwnedModCard({ mod }: { mod: OwnedMod }) {
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  function handleDownload() {
+  async function handleDownload() {
     setLoading(true);
-    // TODO: call server function to mint a short-lived R2 presigned URL, then redirect/open it.
-    // e.g. const { url } = await fetch(`/api/library/${mod.slug}/download-link`).then(r => r.json())
-    setTimeout(() => setLoading(false), 1000);
+    try {
+      const res = await fetch('/api/library/download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ modSlug: mod.slug }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Could not generate a download link');
+      window.location.href = data.downloadUrl;
+    } catch (err) {
+      showToast('error', err instanceof Error ? err.message : 'Download failed');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

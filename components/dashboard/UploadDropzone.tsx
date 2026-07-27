@@ -1,60 +1,63 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
-import { UploadCloud, FileArchive, X } from 'lucide-react';
+import { UploadCloud, FileArchive, X, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { uploadToR2 } from '@/lib/upload-client';
 import ProgressRing from '@/components/dashboard/ProgressRing';
 
 interface UploadDropzoneProps {
   label: string;
   accept: string;
-  onFileSelected?: (file: File) => void;
+  kind: 'mod' | 'screenshot';
+  onUploadComplete?: (key: string) => void;
 }
 
-export default function UploadDropzone({ label, accept, onFileSelected }: UploadDropzoneProps) {
+export default function UploadDropzone({ label, accept, kind, onUploadComplete }: UploadDropzoneProps) {
   const [dragActive, setDragActive] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [progress, setProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const simulateUpload = useCallback((f: File) => {
-    setFile(f);
-    setUploading(true);
-    setProgress(0);
-    onFileSelected?.(f);
+  const startUpload = useCallback(
+    (f: File) => {
+      setFile(f);
+      setUploading(true);
+      setProgress(0);
+      setError(null);
 
-    // TODO: replace this simulated progress with real upload progress from your
-    // R2 PUT request (e.g. via XMLHttpRequest's `upload.onprogress`, since fetch
-    // doesn't expose upload progress natively).
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
+      uploadToR2(f, kind, setProgress)
+        .then(({ key }) => {
           setUploading(false);
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 150);
-  }, [onFileSelected]);
+          onUploadComplete?.(key);
+        })
+        .catch((err: Error) => {
+          setUploading(false);
+          setError(err.message);
+        });
+    },
+    [kind, onUploadComplete]
+  );
 
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragActive(false);
     const dropped = e.dataTransfer.files?.[0];
-    if (dropped) simulateUpload(dropped);
+    if (dropped) startUpload(dropped);
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = e.target.files?.[0];
-    if (selected) simulateUpload(selected);
+    if (selected) startUpload(selected);
   }
 
   function clearFile() {
     setFile(null);
     setProgress(0);
     setUploading(false);
+    setError(null);
     if (inputRef.current) inputRef.current.value = '';
   }
 
@@ -87,13 +90,15 @@ export default function UploadDropzone({ label, accept, onFileSelected }: Upload
               <ProgressRing progress={progress} />
               <span className="absolute font-mono text-[10px] text-cyan">{progress}%</span>
             </div>
+          ) : error ? (
+            <AlertCircle className="w-8 h-8 text-alert shrink-0" />
           ) : (
             <FileArchive className="w-8 h-8 text-signal shrink-0" />
           )}
           <div className="flex-1 min-w-0">
             <p className="text-sm truncate">{file.name}</p>
             <p className="font-mono text-xs text-fog-dim">
-              {uploading ? 'Uploading...' : 'Ready'} · {(file.size / (1024 * 1024)).toFixed(1)} MB
+              {error ? error : uploading ? 'Uploading...' : 'Uploaded'} · {(file.size / (1024 * 1024)).toFixed(1)} MB
             </p>
           </div>
           <button onClick={clearFile} className="p-1.5 text-fog-dim hover:text-alert transition-colors" aria-label="Remove file">

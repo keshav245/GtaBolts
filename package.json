@@ -17,7 +17,10 @@
     "clsx": "^2.1.1",
     "tailwind-merge": "^2.5.4",
     "@supabase/supabase-js": "^2.45.4",
-    "@supabase/ssr": "^0.5.1"
+    "@supabase/ssr": "^0.5.1",
+    "@aws-sdk/client-s3": "^3.671.0",
+    "@aws-sdk/s3-request-presigner": "^3.671.0",
+    "razorpay": "^2.9.4"
   },
   "devDependencies": {
     "typescript": "^5.6.3",

@@ -4,13 +4,14 @@ import DownloadHistoryTable from '@/components/library/DownloadHistoryTable';
 import EmptyState from '@/components/ui/EmptyState';
 import { ShoppingBag } from 'lucide-react';
 import { OWNED_MODS, DOWNLOAD_LOG } from '@/lib/library-data';
+import { requireUser } from '@/lib/auth-guards';
 
-// TODO: wrap this route in your auth check (middleware or a server-side
-// supabase.auth.getUser() call) and redirect to /auth if there's no session.
-// Fetch OWNED_MODS / DOWNLOAD_LOG from Supabase (purchases table joined with mods)
-// scoped to the signed-in user instead of the mock import below.
+// TODO: fetch OWNED_MODS / DOWNLOAD_LOG from Supabase (purchases table joined
+// with mods) scoped to `user.id` instead of the mock import above.
 
-export default function LibraryPage() {
+export default async function LibraryPage() {
+  await requireUser();
+
   const hasPurchases = OWNED_MODS.length > 0;
 
   return (
