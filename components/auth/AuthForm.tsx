@@ -62,7 +62,20 @@ export default function AuthForm() {
       return;
     }
 
-    router.push('/');
+    // Route owners/employees straight to their console instead of the homepage.
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    let destination = '/';
+    if (user) {
+      const { data: roles } = await supabase.from('user_roles').select('role').eq('user_id', user.id);
+      const roleNames = (roles ?? []).map((r) => r.role as string);
+      if (roleNames.includes('owner')) destination = '/admin';
+      else if (roleNames.includes('employee')) destination = '/dashboard';
+    }
+
+    router.push(destination);
     router.refresh();
   }
 
