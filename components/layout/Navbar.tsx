@@ -1,7 +1,11 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Search, User, ShoppingBag } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
+import { Search, User, ShoppingBag, LogOut } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 import NeonButton from '@/components/ui/NeonButton';
 
 const NAV_LINKS = [
@@ -11,6 +15,34 @@ const NAV_LINKS = [
 ];
 
 export default function Navbar() {
+  const router = useRouter();
+  const supabase = createClient();
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+      setLoaded(true);
+    });
+
+    // Keeps the navbar in sync immediately after sign-in/sign-out,
+    // without needing a full page reload.
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase]);
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    router.push('/');
+    router.refresh();
+  }
+
   return (
     <header className="sticky top-0 z-50 glass-strong border-b border-white/10">
       <div className="mx-auto max-w-7xl px-4 md:px-8 h-16 flex items-center justify-between gap-4">
@@ -45,12 +77,34 @@ export default function Navbar() {
           <Link href="/library" className="p-2 text-fog hover:text-cyan transition-colors" aria-label="Your library">
             <ShoppingBag className="w-5 h-5" />
           </Link>
-          <Link href="/auth" className="p-2 text-fog hover:text-violet-bright transition-colors" aria-label="Account">
-            <User className="w-5 h-5" />
-          </Link>
-          <Link href="/auth">
-            <NeonButton size="sm">Sign in</NeonButton>
-          </Link>
+
+          {!loaded ? (
+            // Reserve space to avoid a layout flash before auth state resolves
+            <div className="w-20 h-8" />
+          ) : user ? (
+            <>
+              <span className="text-xs font-mono text-fog-dim max-w-[140px] truncate" title={user.email ?? ''}>
+                {user.email}
+              </span>
+              <button
+                onClick={handleSignOut}
+                className="p-2 text-fog hover:text-alert transition-colors"
+                aria-label="Sign out"
+                title="Sign out"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/auth" className="p-2 text-fog hover:text-violet-bright transition-colors" aria-label="Account">
+                <User className="w-5 h-5" />
+              </Link>
+              <Link href="/auth">
+                <NeonButton size="sm">Sign in</NeonButton>
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>
