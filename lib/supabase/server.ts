@@ -25,3 +25,12 @@ export async function createClient() {
     }
   );
 }
+
+// Convenience helper: get the signed-in user (or null) in a Server Component.
+export async function getUser() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user;
+}
