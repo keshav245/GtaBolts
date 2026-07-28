@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
-import { Search, User, ShoppingBag, LogOut } from 'lucide-react';
+import { Search, User, ShoppingBag, LogOut, Crown, Wrench } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import NeonButton from '@/components/ui/NeonButton';
 
@@ -18,13 +18,25 @@ export default function Navbar() {
   const router = useRouter();
   const supabase = createClient();
   const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [roles, setRoles] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    async function loadUserAndRoles() {
+      const { data } = await supabase.auth.getUser();
       setUser(data.user);
+
+      if (data.user) {
+        const { data: roleRows } = await supabase.from('user_roles').select('role').eq('user_id', data.user.id);
+        setRoles((roleRows ?? []).map((r) => r.role as string));
+      } else {
+        setRoles([]);
+      }
+
       setLoaded(true);
-    });
+    }
+
+    loadUserAndRoles();
 
     // Keeps the navbar in sync immediately after sign-in/sign-out,
     // without needing a full page reload.
@@ -32,6 +44,8 @@ export default function Navbar() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      if (!session?.user) setRoles([]);
+      else loadUserAndRoles();
     });
 
     return () => subscription.unsubscribe();
@@ -42,6 +56,9 @@ export default function Navbar() {
     router.push('/');
     router.refresh();
   }
+
+  const isOwner = roles.includes('owner');
+  const isEmployee = roles.includes('employee');
 
   return (
     <header className="sticky top-0 z-50 glass-strong border-b border-white/10">
@@ -83,6 +100,21 @@ export default function Navbar() {
             <div className="w-20 h-8" />
           ) : user ? (
             <>
+              {isOwner && (
+                <Link href="/admin">
+                  <NeonButton size="sm" variant="secondary" className="flex items-center gap-1.5">
+                    <Crown className="w-3.5 h-3.5" /> Admin
+                  </NeonButton>
+                </Link>
+              )}
+              {!isOwner && isEmployee && (
+                <Link href="/dashboard">
+                  <NeonButton size="sm" variant="secondary" className="flex items-center gap-1.5">
+                    <Wrench className="w-3.5 h-3.5" /> Dashboard
+                  </NeonButton>
+                </Link>
+              )}
+
               <span className="text-xs font-mono text-fog-dim max-w-[140px] truncate" title={user.email ?? ''}>
                 {user.email}
               </span>
