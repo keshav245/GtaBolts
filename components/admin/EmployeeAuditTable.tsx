@@ -4,14 +4,18 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { cn, formatPrice } from '@/lib/utils';
 import GlassCard from '@/components/ui/GlassCard';
-import { EMPLOYEE_AUDITS } from '@/lib/admin-data';
+import { EmployeeAudit } from '@/lib/queries/admin';
 
-export default function EmployeeAuditTable() {
+export default function EmployeeAuditTable({ audits }: { audits: EmployeeAudit[] }) {
   const [expanded, setExpanded] = useState<string | null>(null);
+
+  if (audits.length === 0) {
+    return <p className="text-sm text-fog-dim">No employees yet — grant someone the employee role in Role management.</p>;
+  }
 
   return (
     <div className="space-y-3">
-      {EMPLOYEE_AUDITS.map((emp) => {
+      {audits.map((emp) => {
         const isOpen = expanded === emp.email;
         return (
           <GlassCard key={emp.email} className="overflow-hidden">

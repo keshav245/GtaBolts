@@ -2,19 +2,14 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import MediaGallery from '@/components/mod/MediaGallery';
 import PurchasePanel from '@/components/mod/PurchasePanel';
-import Changelog from '@/components/mod/Changelog';
-import { getAllMods, getModBySlug } from '@/lib/mods-data';
+import { getPublishedModBySlug } from '@/lib/queries/mods';
 
 interface ModPageProps {
   params: { slug: string };
 }
 
-export function generateStaticParams() {
-  return getAllMods().map((m) => ({ slug: m.slug }));
-}
-
-export default function ModDetailPage({ params }: ModPageProps) {
-  const mod = getModBySlug(params.slug);
+export default async function ModDetailPage({ params }: ModPageProps) {
+  const mod = await getPublishedModBySlug(params.slug);
   if (!mod) notFound();
 
   return (
@@ -35,12 +30,7 @@ export default function ModDetailPage({ params }: ModPageProps) {
 
           <div>
             <h2 className="font-display font-semibold text-xl mb-3">Description</h2>
-            <p className="text-fog leading-relaxed">{mod.description}</p>
-          </div>
-
-          <div>
-            <h2 className="font-display font-semibold text-xl mb-3">Changelog</h2>
-            <Changelog entries={mod.changelog} />
+            <p className="text-fog leading-relaxed">{mod.description || 'No description provided yet.'}</p>
           </div>
         </div>
 

@@ -2,7 +2,7 @@
 
 import { Search, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { CATEGORIES } from '@/lib/mods-data';
+import { CATEGORIES } from '@/lib/categories';
 
 export type SortOption = 'popular' | 'newest' | 'price-low' | 'price-high';
 

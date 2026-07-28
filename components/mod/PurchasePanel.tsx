@@ -7,7 +7,7 @@ import GlassCard from '@/components/ui/GlassCard';
 import NeonButton from '@/components/ui/NeonButton';
 import { useToast } from '@/components/ui/ToastProvider';
 import { formatPrice, formatCount } from '@/lib/utils';
-import { ModDetail } from '@/lib/mods-data';
+import type { ModDetailResult } from '@/lib/queries/mods';
 
 declare global {
   interface Window {
@@ -30,7 +30,7 @@ function loadRazorpayScript(): Promise<boolean> {
   });
 }
 
-export default function PurchasePanel({ mod }: { mod: ModDetail }) {
+export default function PurchasePanel({ mod }: { mod: ModDetailResult }) {
   const router = useRouter();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);

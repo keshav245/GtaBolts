@@ -1,4 +1,4 @@
-import { DownloadLogEntry } from '@/lib/library-data';
+import { DownloadLogEntry } from '@/lib/queries/library';
 
 export default function DownloadHistoryTable({ entries }: { entries: DownloadLogEntry[] }) {
   return (

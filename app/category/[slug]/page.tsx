@@ -2,21 +2,17 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import ModCard from '@/components/mods/ModCard';
 import EmptyState from '@/components/ui/EmptyState';
-import { CATEGORIES, getModsByCategory } from '@/lib/mods-data';
+import { CATEGORIES, getPublishedModsByCategory } from '@/lib/queries/mods';
 
 interface CategoryPageProps {
   params: { slug: string };
 }
 
-export function generateStaticParams() {
-  return CATEGORIES.map((c) => ({ slug: c.slug }));
-}
-
-export default function CategoryPage({ params }: CategoryPageProps) {
+export default async function CategoryPage({ params }: CategoryPageProps) {
   const category = CATEGORIES.find((c) => c.slug === params.slug);
   if (!category) notFound();
 
-  const mods = getModsByCategory(params.slug);
+  const mods = await getPublishedModsByCategory(category.name);
 
   return (
     <div className="mx-auto max-w-7xl px-4 md:px-8 py-10">

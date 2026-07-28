@@ -8,7 +8,7 @@ import NeonButton from '@/components/ui/NeonButton';
 import UploadDropzone from '@/components/dashboard/UploadDropzone';
 import { useToast } from '@/components/ui/ToastProvider';
 import { uploadToR2 } from '@/lib/upload-client';
-import { CATEGORIES } from '@/lib/mods-data';
+import { CATEGORIES } from '@/lib/categories';
 import { createMod } from './actions';
 
 function slugify(text: string) {

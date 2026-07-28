@@ -100,7 +100,31 @@ Still mock/stubbed: the actual mod data shown on these pages (still from `lib/mo
 4. Run `0002_purchases_update_policy.sql` in the Supabase SQL Editor.
 5. Test end-to-end with a Razorpay **test card** (available in their docs) before going live — switch to live keys only once that works.
 
-### What's still mock
-`/`, `/browse`, `/category/:slug` still read from `lib/mods-data.ts` rather than the real `mods` table, and view counters aren't incremented yet. Swapping those three list/detail queries for real Supabase reads is the last remaining piece — everything else (auth, uploads, downloads, payments, moderation, roles) is now real.
+## Phase 8 — every mock data source replaced with real Supabase queries
+
+This was a bigger change than it sounds, so here's exactly what moved and why.
+
+### New migrations — run these too
+- `0003_employee_purchase_visibility.sql` — lets an employee see purchases of their *own* mods (needed for `/dashboard` sales stats), and lets them delete their own *drafts* only (previously only owners could delete anything at all).
+- `0004_download_logs.sql` — a real `download_logs` table, so `/library`'s download history is an actual log instead of the earlier fabricated mock rows.
+
+### What's real now that wasn't
+- **`/`, `/browse`, `/category/:slug`, `/mod/:slug`** — all read from the real `mods` table (`lib/queries/mods.ts`) instead of a hard-coded array. Screenshots are private R2 objects, so even just *displaying* one now requires a signed URL (`getScreenshotUrl` in `lib/r2.ts`) — separate from the purchase-gated mod file download.
+- **`/dashboard`** — `lib/queries/dashboard.ts` reads your actual uploaded mods, and the publish/unpublish/delete buttons in `ModsTable.tsx` call real server actions (`app/dashboard/actions.ts`) instead of only updating local React state.
+- **`/admin` (all five pages)** — `lib/queries/admin.ts` powers real revenue totals, real platform-wide mod moderation (with real approve/unpublish/delete actions in `app/admin/moderation/actions.ts`), a real employee audit, and a real user directory.
+- **`/admin/roles` — this was the important one to catch**: the role grant/revoke UI was *only ever a local simulation* (`setTimeout` fakes) from when it was first built — it never actually wrote to `user_roles`. `app/admin/roles/actions.ts` now does real inserts/deletes, gated by the same RLS as everything else.
+- **`/library`** — real owned-mods query, and a real download history backed by the new `download_logs` table (previously fabricated rows).
+
+### Two honest simplifications, called out rather than hidden
+- **Ratings** show as `0` everywhere — there's no reviews/ratings table in the schema. The star icon is still a placeholder from the original UI design; a real rating system would need its own table and UI for submitting reviews.
+- **Sparklines** (on `/dashboard` and `/admin`) are decorative — there's no daily-history table, so they draw a simple upward line ending at the real current total rather than pretending to show real day-by-day trend data. The headline numbers next to them are 100% real.
+- **Employee audit's "activity log"** is derived from each mod's own timestamps (upload/publish dates), not a dedicated audit table — good enough to show real activity, but won't capture every edit.
+- **Changelog** section was removed from the mod detail page — there's no changelog table, and it was pure UI mockup before.
+- **The homepage purchase ticker** stays mock/decorative on purpose — wiring it to a live feed of real purchases would mean publicly displaying real users' email addresses on the homepage, which isn't something to do without a proper display-name/anonymization system first.
+
+### To finish this phase yourself
+1. Run `0003_employee_purchase_visibility.sql` and `0004_download_logs.sql` in the Supabase SQL Editor.
+2. Push this code.
+3. Upload a real mod through `/dashboard/upload` as an employee, publish it, and it should now show up on `/`, `/browse`, and its category page for real.
 
 Backend logic (Supabase RLS, `private.has_role()`, Razorpay webhook, R2 presigned URLs) is untouched — this is UI only.

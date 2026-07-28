@@ -40,5 +40,8 @@ export async function POST(request: Request) {
   const command = new GetObjectCommand({ Bucket: R2_BUCKET, Key: mod.file_key });
   const downloadUrl = await getSignedUrl(r2Client, command, { expiresIn: 300 }); // 5 minute link
 
+  // Best-effort log — a failure here shouldn't block the download itself.
+  await supabase.from('download_logs').insert({ user_id: user.id, mod_id: mod.id });
+
   return NextResponse.json({ downloadUrl });
 }

@@ -1,90 +1,56 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Search, ShieldPlus, X, Crown, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import GlassCard from '@/components/ui/GlassCard';
 import NeonButton from '@/components/ui/NeonButton';
 import { useToast } from '@/components/ui/ToastProvider';
-import { PLATFORM_USERS, Role } from '@/lib/admin-data';
+import { RoleHolder } from '@/lib/queries/admin';
+import { grantRoleAction, revokeRoleAction } from '@/app/admin/roles/actions';
 
-interface RoleActionResult {
-  ok: boolean;
-  code: 'granted' | 'revoked' | 'user_not_found' | 'already_has_role' | 'error';
-  message: string;
-}
+type Role = 'employee' | 'owner';
 
-// TODO: replace with a real server action calling supabaseAdmin to insert/delete
-// a row in user_roles. On "user not found", real implementations typically write
-// a pending_role_grants row keyed by email, applied automatically on first sign-up.
-function grantRoleStub(email: string, role: Role): Promise<RoleActionResult> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const user = PLATFORM_USERS.find((u) => u.email.toLowerCase() === email.toLowerCase());
-      if (!user) {
-        resolve({
-          ok: true,
-          code: 'user_not_found',
-          message: `${email} hasn't signed up yet — the ${role} role will apply automatically once they do.`,
-        });
-        return;
-      }
-      if (user.roles.includes(role)) {
-        resolve({ ok: false, code: 'already_has_role', message: `${email} already has the ${role} role.` });
-        return;
-      }
-      resolve({ ok: true, code: 'granted', message: `Granted ${role} role to ${email}.` });
-    }, 600);
-  });
-}
-
-function revokeRoleStub(email: string, role: Role): Promise<RoleActionResult> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ ok: true, code: 'revoked', message: `Revoked ${role} role from ${email}.` });
-    }, 500);
-  });
-}
-
-export default function RoleCommandPalette() {
+export default function RoleCommandPalette({ initialHolders }: { initialHolders: RoleHolder[] }) {
   const { showToast } = useToast();
-  const [users, setUsers] = useState(PLATFORM_USERS);
+  const [holders, setHolders] = useState(initialHolders);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<Role>('employee');
   const [submitting, setSubmitting] = useState(false);
 
-  const roleHolders = useMemo(
-    () => users.filter((u) => u.roles.includes('employee') || u.roles.includes('owner')),
-    [users]
-  );
-
   async function handleGrant() {
     if (!email.trim()) return;
     setSubmitting(true);
-    const result = await grantRoleStub(email.trim(), role);
+    const result = await grantRoleAction(email.trim(), role);
     setSubmitting(false);
 
     if (result.code === 'granted') {
-      setUsers((prev) =>
-        prev.some((u) => u.email.toLowerCase() === email.toLowerCase())
-          ? prev.map((u) => (u.email.toLowerCase() === email.toLowerCase() ? { ...u, roles: [...u.roles, role] } : u))
-          : [...prev, { id: `pending-${email}`, email, roles: [role], joinedAt: '—', totalSpentInPaise: 0, purchases: [] }]
-      );
+      setHolders((prev) => {
+        const existing = prev.find((h) => h.email.toLowerCase() === email.toLowerCase());
+        if (existing) {
+          return prev.map((h) => (h.email.toLowerCase() === email.toLowerCase() ? { ...h, roles: [...h.roles, role] } : h));
+        }
+        // We don't have the real user id client-side for a brand-new holder;
+        // a revalidate/refresh (revalidatePath in the action) will backfill it
+        // with the real id on next load. This is just optimistic UI in the meantime.
+        return [...prev, { id: `pending-${email}`, email: email.trim(), roles: [role] }];
+      });
       showToast('success', result.message);
       setEmail('');
     } else if (result.code === 'user_not_found') {
       showToast('info', result.message);
-      setEmail('');
     } else {
       showToast('warning', result.message);
     }
   }
 
-  async function handleRevoke(targetEmail: string, targetRole: Role) {
-    const result = await revokeRoleStub(targetEmail, targetRole);
+  async function handleRevoke(userId: string, targetEmail: string, targetRole: Role) {
+    const result = await revokeRoleAction(userId, targetEmail, targetRole);
     if (result.ok) {
-      setUsers((prev) =>
-        prev.map((u) => (u.email === targetEmail ? { ...u, roles: u.roles.filter((r) => r !== targetRole) } : u))
+      setHolders((prev) =>
+        prev
+          .map((h) => (h.id === userId ? { ...h, roles: h.roles.filter((r) => r !== targetRole) } : h))
+          .filter((h) => h.roles.length > 0)
       );
       showToast('success', result.message);
     } else {
@@ -103,7 +69,7 @@ export default function RoleCommandPalette() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleGrant()}
-              placeholder="Search or enter an email to grant a role..."
+              placeholder="Enter a signed-up user's email to grant a role..."
               className="w-full glass rounded-md pl-9 pr-3 py-3 text-sm placeholder:text-fog-dim focus:outline-none focus:border-violet/50 focus:shadow-glow-sm transition-all"
             />
           </div>
@@ -125,32 +91,34 @@ export default function RoleCommandPalette() {
 
       <div>
         <p className="text-[11px] font-mono uppercase tracking-wider text-fog-dim mb-3">Current role holders</p>
-        <div className="flex flex-wrap gap-2">
-          {roleHolders.map((user) =>
-            user.roles
-              .filter((r) => r !== 'user')
-              .map((r) => (
+        {holders.length === 0 ? (
+          <p className="text-sm text-fog-dim">No employees or owners yet, other than you.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {holders.map((holder) =>
+              holder.roles.map((r) => (
                 <div
-                  key={`${user.email}-${r}`}
+                  key={`${holder.email}-${r}`}
                   className={cn(
                     'flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-full text-xs border',
                     r === 'owner' ? 'border-violet/40 bg-violet/10 text-violet-bright' : 'border-cyan/40 bg-cyan/10 text-cyan'
                   )}
                 >
                   {r === 'owner' ? <Crown className="w-3 h-3" /> : <Wrench className="w-3 h-3" />}
-                  <span>{user.email}</span>
+                  <span>{holder.email}</span>
                   <span className="font-mono uppercase text-[10px] opacity-70">{r}</span>
                   <button
-                    onClick={() => handleRevoke(user.email, r)}
+                    onClick={() => handleRevoke(holder.id, holder.email, r as Role)}
                     className="hover:text-alert transition-colors"
-                    aria-label={`Revoke ${r} from ${user.email}`}
+                    aria-label={`Revoke ${r} from ${holder.email}`}
                   >
                     <X className="w-3 h-3" />
                   </button>
                 </div>
               ))
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

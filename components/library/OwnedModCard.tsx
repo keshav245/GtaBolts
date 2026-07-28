@@ -7,7 +7,7 @@ import { Download, Loader2, RotateCw } from 'lucide-react';
 import GlassCard from '@/components/ui/GlassCard';
 import NeonButton from '@/components/ui/NeonButton';
 import { useToast } from '@/components/ui/ToastProvider';
-import { OwnedMod } from '@/lib/library-data';
+import { OwnedMod } from '@/lib/queries/library';
 
 export default function OwnedModCard({ mod }: { mod: OwnedMod }) {
   const { showToast } = useToast();

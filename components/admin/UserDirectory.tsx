@@ -5,15 +5,15 @@ import { Search, ChevronDown, ChevronUp, Crown, Wrench } from 'lucide-react';
 import { cn, formatPrice } from '@/lib/utils';
 import GlassCard from '@/components/ui/GlassCard';
 import EmptyState from '@/components/ui/EmptyState';
-import { PLATFORM_USERS } from '@/lib/admin-data';
+import { PlatformUser } from '@/lib/queries/admin';
 
-export default function UserDirectory() {
+export default function UserDirectory({ users }: { users: PlatformUser[] }) {
   const [query, setQuery] = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const filtered = useMemo(
-    () => PLATFORM_USERS.filter((u) => u.email.toLowerCase().includes(query.toLowerCase())),
-    [query]
+    () => users.filter((u) => u.email.toLowerCase().includes(query.toLowerCase())),
+    [users, query]
   );
 
   return (
