@@ -175,10 +175,12 @@ export default function UploadModPage() {
           <label className="text-xs font-mono uppercase tracking-wider text-fog-dim mb-1.5 block">Screenshots</label>
           <div className="grid grid-cols-4 gap-2 mb-2">
             {screenshots.map((s, i) => (
-              <div key={i} className="relative aspect-video rounded-md overflow-hidden group">
+              <div key={i} className="relative aspect-video rounded-md overflow-hidden group bg-black/40">
                 {/* Plain <img>, not next/image — this is a local blob: preview
-                    URL, not a real remote image next/image can optimize. */}
-                <img src={s.previewUrl} alt={`Screenshot ${i + 1}`} className="absolute inset-0 w-full h-full object-cover" />
+                    URL, not a real remote image next/image can optimize.
+                    object-contain (not cover) so the full screenshot is visible,
+                    letterboxed rather than cropped if its aspect ratio differs. */}
+                <img src={s.previewUrl} alt={`Screenshot ${i + 1}`} className="absolute inset-0 w-full h-full object-contain" />
                 {s.uploading && (
                   <div className="absolute inset-0 bg-void/60 flex items-center justify-center">
                     <Loader2 className="w-4 h-4 animate-spin text-cyan" />

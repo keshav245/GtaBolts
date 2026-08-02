@@ -8,9 +8,11 @@ export default function MediaGallery({ screenshots, title }: { screenshots: stri
 
   return (
     <div>
-      <div className="relative aspect-video rounded-lg overflow-hidden glass reticle">
-        {/* Plain <img> — expiring presigned R2 URL, not worth Next's image optimizer */}
-        <img src={screenshots[active]} alt={`${title} screenshot ${active + 1}`} className="absolute inset-0 w-full h-full object-cover" />
+      <div className="relative aspect-video rounded-lg overflow-hidden glass reticle bg-black/40">
+        {/* object-contain — customers should see the whole screenshot before
+            buying, not a cropped version. Thumbnails below stay object-cover
+            since they're just a nav strip. */}
+        <img src={screenshots[active]} alt={`${title} screenshot ${active + 1}`} className="absolute inset-0 w-full h-full object-contain" />
       </div>
 
       {screenshots.length > 1 && (
