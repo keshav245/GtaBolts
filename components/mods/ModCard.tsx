@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { Download, Star } from 'lucide-react';
 import GlassCard from '@/components/ui/GlassCard';
 import { formatPrice, formatCount } from '@/lib/utils';
@@ -22,11 +21,13 @@ export default function ModCard({ mod }: { mod: Mod }) {
     <Link href={`/mod/${mod.slug}`}>
       <GlassCard reticle className="group overflow-hidden">
         <div className="relative aspect-video overflow-hidden">
-          <Image
+          {/* Plain <img>, not next/image — these are freshly-signed, expiring
+              R2 URLs; running them through Next's image optimizer adds no
+              benefit and was hanging on the server-side fetch. */}
+          <img
             src={mod.thumbnailUrl}
             alt={mod.title}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
           <div className="absolute top-2 right-2 font-mono text-xs px-2 py-1 rounded bg-void/70 backdrop-blur-sm border border-violet/40 text-violet-bright">
             {formatPrice(mod.priceInPaise)}

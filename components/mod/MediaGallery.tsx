@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 export default function MediaGallery({ screenshots, title }: { screenshots: string[]; title: string }) {
@@ -10,7 +9,8 @@ export default function MediaGallery({ screenshots, title }: { screenshots: stri
   return (
     <div>
       <div className="relative aspect-video rounded-lg overflow-hidden glass reticle">
-        <Image src={screenshots[active]} alt={`${title} screenshot ${active + 1}`} fill className="object-cover" />
+        {/* Plain <img> — expiring presigned R2 URL, not worth Next's image optimizer */}
+        <img src={screenshots[active]} alt={`${title} screenshot ${active + 1}`} className="absolute inset-0 w-full h-full object-cover" />
       </div>
 
       {screenshots.length > 1 && (
@@ -24,7 +24,7 @@ export default function MediaGallery({ screenshots, title }: { screenshots: stri
                 active === i ? 'border-violet-bright' : 'border-white/10 hover:border-white/30'
               )}
             >
-              <Image src={src} alt={`Thumbnail ${i + 1}`} fill className="object-cover" />
+              <img src={src} alt={`Thumbnail ${i + 1}`} className="absolute inset-0 w-full h-full object-cover" />
             </button>
           ))}
         </div>

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { X, Loader2 } from 'lucide-react';
 import GlassCard from '@/components/ui/GlassCard';
 import NeonButton from '@/components/ui/NeonButton';
@@ -177,7 +176,9 @@ export default function UploadModPage() {
           <div className="grid grid-cols-4 gap-2 mb-2">
             {screenshots.map((s, i) => (
               <div key={i} className="relative aspect-video rounded-md overflow-hidden group">
-                <Image src={s.previewUrl} alt={`Screenshot ${i + 1}`} fill className="object-cover" />
+                {/* Plain <img>, not next/image — this is a local blob: preview
+                    URL, not a real remote image next/image can optimize. */}
+                <img src={s.previewUrl} alt={`Screenshot ${i + 1}`} className="absolute inset-0 w-full h-full object-cover" />
                 {s.uploading && (
                   <div className="absolute inset-0 bg-void/60 flex items-center justify-center">
                     <Loader2 className="w-4 h-4 animate-spin text-cyan" />

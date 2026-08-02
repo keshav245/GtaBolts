@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { Download, Loader2, RotateCw } from 'lucide-react';
 import GlassCard from '@/components/ui/GlassCard';
@@ -34,7 +33,7 @@ export default function OwnedModCard({ mod }: { mod: OwnedMod }) {
   return (
     <GlassCard className="p-4 flex gap-4 items-center">
       <div className="relative w-24 aspect-video rounded-md overflow-hidden shrink-0">
-        <Image src={mod.thumbnailUrl} alt={mod.title} fill className="object-cover" />
+        <img src={mod.thumbnailUrl} alt={mod.title} className="absolute inset-0 w-full h-full object-cover" />
       </div>
 
       <div className="flex-1 min-w-0">
