@@ -6,10 +6,20 @@ import BrowseControls, { SortOption } from '@/components/browse/BrowseControls';
 import EmptyState from '@/components/ui/EmptyState';
 
 export default function BrowseClient({ mods: allMods }: { mods: Mod[] }) {
+  // Real ceiling derived from actual mod prices (rounded up to the nearest
+  // 100 for a clean slider max), instead of a hardcoded guess that could
+  // silently hide any mod priced above it. Falls back to 1000 if there are
+  // no mods yet, just so the slider has something reasonable to show.
+  const priceCeiling = useMemo(() => {
+    if (allMods.length === 0) return 1000;
+    const highest = Math.max(...allMods.map((m) => m.priceInPaise / 100));
+    return Math.ceil(highest / 100) * 100;
+  }, [allMods]);
+
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [sort, setSort] = useState<SortOption>('popular');
-  const [maxPrice, setMaxPrice] = useState(300);
+  const [maxPrice, setMaxPrice] = useState(priceCeiling);
 
   const filtered = useMemo(() => {
     let result = allMods.filter((mod) => {
@@ -41,7 +51,7 @@ export default function BrowseClient({ mods: allMods }: { mods: Mod[] }) {
   function resetFilters() {
     setSearch('');
     setActiveCategory(null);
-    setMaxPrice(300);
+    setMaxPrice(priceCeiling);
   }
 
   return (
@@ -55,6 +65,7 @@ export default function BrowseClient({ mods: allMods }: { mods: Mod[] }) {
           sort={sort}
           onSortChange={setSort}
           maxPrice={maxPrice}
+          priceCeiling={priceCeiling}
           onMaxPriceChange={setMaxPrice}
         />
       </aside>

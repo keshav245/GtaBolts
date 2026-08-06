@@ -14,6 +14,7 @@ interface BrowseControlsProps {
   sort: SortOption;
   onSortChange: (v: SortOption) => void;
   maxPrice: number;
+  priceCeiling: number;
   onMaxPriceChange: (v: number) => void;
 }
 
@@ -32,6 +33,7 @@ export default function BrowseControls({
   sort,
   onSortChange,
   maxPrice,
+  priceCeiling,
   onMaxPriceChange,
 }: BrowseControlsProps) {
   return (
@@ -86,7 +88,7 @@ export default function BrowseControls({
         <input
           type="range"
           min={0}
-          max={300}
+          max={priceCeiling}
           step={10}
           value={maxPrice}
           onChange={(e) => onMaxPriceChange(Number(e.target.value))}
