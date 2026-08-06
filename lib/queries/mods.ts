@@ -18,14 +18,15 @@ interface DbMod {
   created_at: string;
 }
 
-// No reviews/ratings table exists yet, so rating is always 0 for now — the
-// stars in the UI are a placeholder until a reviews feature gets built.
 async function toModCard(supabase: Awaited<ReturnType<typeof createClient>>, row: DbMod): Promise<Mod> {
   const { count } = await supabase
     .from('purchases')
     .select('id', { count: 'exact', head: true })
     .eq('mod_id', row.id)
     .eq('status', 'completed');
+
+  const { data: ratings } = await supabase.from('mod_ratings').select('rating').eq('mod_id', row.id);
+  const avgRating = ratings && ratings.length > 0 ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length : 0;
 
   const thumbnailUrl = row.screenshots[0] ? await getScreenshotUrl(row.screenshots[0]) : '/placeholder-mod.jpg';
 
@@ -36,7 +37,7 @@ async function toModCard(supabase: Awaited<ReturnType<typeof createClient>>, row
     thumbnailUrl,
     priceInPaise: row.price_in_paise,
     downloads: count ?? 0,
-    rating: 0,
+    rating: avgRating,
     version: row.version,
   };
 }
@@ -70,6 +71,9 @@ export interface ModDetailResult extends Mod {
   description: string;
   screenshots: string[];
   views: number;
+  ratingCount: number;
+  currentUserCanRate: boolean;
+  currentUserRating: number | null;
 }
 
 export async function getPublishedModBySlug(slug: string): Promise<ModDetailResult | null> {
@@ -84,16 +88,61 @@ export async function getPublishedModBySlug(slug: string): Promise<ModDetailResu
   if (!data) return null;
 
   const row = data as DbMod;
+
+  // Awaited (not fire-and-forget) — in a serverless function, an unawaited
+  // promise can get cancelled once the response is sent, so this could
+  // silently never actually run otherwise. Wrapped in try/catch so a
+  // failure here still can't break the page render.
+  try {
+    await supabase.rpc('increment_mod_views', { mod_slug: slug });
+  } catch {
+    // Non-critical — worst case the view count is off by one.
+  }
+
   const modCard = await toModCard(supabase, row);
   const screenshotUrls = row.screenshots.length
     ? await Promise.all(row.screenshots.map(getScreenshotUrl))
     : ['/placeholder-mod.jpg'];
 
+  const { count: ratingCount } = await supabase
+    .from('mod_ratings')
+    .select('id', { count: 'exact', head: true })
+    .eq('mod_id', row.id);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let currentUserCanRate = false;
+  let currentUserRating: number | null = null;
+
+  if (user) {
+    const { data: existingRating } = await supabase
+      .from('mod_ratings')
+      .select('rating')
+      .eq('mod_id', row.id)
+      .eq('user_id', user.id)
+      .maybeSingle();
+    currentUserRating = existingRating?.rating ?? null;
+
+    const { data: purchase } = await supabase
+      .from('purchases')
+      .select('id')
+      .eq('mod_id', row.id)
+      .eq('user_id', user.id)
+      .eq('status', 'completed')
+      .maybeSingle();
+    currentUserCanRate = !!purchase;
+  }
+
   return {
     ...modCard,
     description: row.description ?? '',
     screenshots: screenshotUrls,
-    views: row.views,
+    views: row.views + 1, // reflects the increment that just happened
+    ratingCount: ratingCount ?? 0,
+    currentUserCanRate,
+    currentUserRating,
   };
 }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Eye, EyeOff, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { cn, formatPrice, formatCount } from '@/lib/utils';
 import { useToast } from '@/components/ui/ToastProvider';
@@ -96,13 +97,14 @@ export default function ModsTable({ mods }: { mods: DashboardMod[] }) {
                           {mod.status === 'published' ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       )}
-                      <button
-                        className="p-1.5 rounded-md text-fog-dim hover:text-cyan hover:bg-white/5 transition-colors"
+                      <Link
+                        href={`/dashboard/edit/${mod.slug}`}
+                        className="p-1.5 rounded-md text-fog-dim hover:text-cyan hover:bg-white/5 transition-colors inline-flex"
                         aria-label="Edit"
-                        title="Edit (not built yet)"
+                        title="Edit"
                       >
                         <Pencil className="w-4 h-4" />
-                      </button>
+                      </Link>
                       {mod.status === 'draft' && (
                         <button
                           onClick={() => handleDelete(mod.slug, mod.title)}

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import MediaGallery from '@/components/mod/MediaGallery';
 import PurchasePanel from '@/components/mod/PurchasePanel';
+import RatingWidget from '@/components/mod/RatingWidget';
 import { getPublishedModBySlug } from '@/lib/queries/mods';
 
 interface ModPageProps {
@@ -32,6 +33,14 @@ export default async function ModDetailPage({ params }: ModPageProps) {
             <h2 className="font-display font-semibold text-xl mb-3">Description</h2>
             <p className="text-fog leading-relaxed">{mod.description || 'No description provided yet.'}</p>
           </div>
+
+          <RatingWidget
+            modSlug={mod.slug}
+            averageRating={mod.rating}
+            ratingCount={mod.ratingCount}
+            currentUserCanRate={mod.currentUserCanRate}
+            currentUserRating={mod.currentUserRating}
+          />
         </div>
 
         <PurchasePanel mod={mod} />
