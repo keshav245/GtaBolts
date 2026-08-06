@@ -7,7 +7,7 @@ import GlassCard from '@/components/ui/GlassCard';
 import NeonButton from '@/components/ui/NeonButton';
 import { useToast } from '@/components/ui/ToastProvider';
 import { CATEGORIES } from '@/lib/categories';
-import { updateModDetails } from './actions';
+import { updateModDetails } from '@/app/dashboard/edit/[slug]/actions';
 
 interface EditModFormProps {
   slug: string;
