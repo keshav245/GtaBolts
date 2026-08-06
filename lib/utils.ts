@@ -10,7 +10,7 @@ export function formatPrice(paise: number) {
     style: 'currency',
     currency: 'INR',
     maximumFractionDigits: 0,
-  }).format(paise);
+  }).format(paise / 100);
 }
 
 export function formatCount(n: number) {
