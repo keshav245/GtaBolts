@@ -6,7 +6,7 @@ export interface UploadResult {
 // for the actual PUT — that's the only part that needs it.
 export function uploadToR2(
   file: File,
-  kind: 'mod' | 'screenshot',
+  kind: 'mod' | 'screenshot' | 'category',
   onProgress?: (percent: number) => void
 ): Promise<UploadResult> {
   return new Promise((resolve, reject) => {

@@ -5,7 +5,7 @@ import ModCard, { Mod } from '@/components/mods/ModCard';
 import BrowseControls, { SortOption } from '@/components/browse/BrowseControls';
 import EmptyState from '@/components/ui/EmptyState';
 
-export default function BrowseClient({ mods: allMods }: { mods: Mod[] }) {
+export default function BrowseClient({ mods: allMods, categories }: { mods: Mod[]; categories: { slug: string; name: string }[] }) {
   // Real ceiling derived from actual mod prices (rounded up to the nearest
   // 100 for a clean slider max), instead of a hardcoded guess that could
   // silently hide any mod priced above it. Falls back to 1000 if there are
@@ -67,6 +67,7 @@ export default function BrowseClient({ mods: allMods }: { mods: Mod[] }) {
           maxPrice={maxPrice}
           priceCeiling={priceCeiling}
           onMaxPriceChange={setMaxPrice}
+          categories={categories}
         />
       </aside>
 

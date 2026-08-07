@@ -1,8 +1,9 @@
 import BrowseClient from '@/components/browse/BrowseClient';
 import { getPublishedMods } from '@/lib/queries/mods';
+import { getCategories } from '@/lib/queries/categories';
 
 export default async function BrowsePage() {
-  const mods = await getPublishedMods();
+  const [mods, categories] = await Promise.all([getPublishedMods(), getCategories()]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 md:px-8 py-10">
@@ -11,7 +12,7 @@ export default async function BrowsePage() {
         <h1 className="font-display font-bold text-3xl md:text-4xl">Browse mods</h1>
       </div>
 
-      <BrowseClient mods={mods} />
+      <BrowseClient mods={mods} categories={categories} />
     </div>
   );
 }

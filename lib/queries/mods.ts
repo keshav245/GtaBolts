@@ -1,9 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { getScreenshotUrl } from '@/lib/r2';
-import { CATEGORIES } from '@/lib/categories';
 import type { Mod } from '@/components/mods/ModCard';
-
-export { CATEGORIES };
 
 interface DbMod {
   id: string;

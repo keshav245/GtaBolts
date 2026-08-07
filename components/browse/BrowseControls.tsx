@@ -2,9 +2,13 @@
 
 import { Search, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { CATEGORIES } from '@/lib/categories';
 
 export type SortOption = 'popular' | 'newest' | 'price-low' | 'price-high';
+
+interface CategoryOption {
+  slug: string;
+  name: string;
+}
 
 interface BrowseControlsProps {
   search: string;
@@ -16,6 +20,7 @@ interface BrowseControlsProps {
   maxPrice: number;
   priceCeiling: number;
   onMaxPriceChange: (v: number) => void;
+  categories: CategoryOption[];
 }
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
@@ -35,6 +40,7 @@ export default function BrowseControls({
   maxPrice,
   priceCeiling,
   onMaxPriceChange,
+  categories,
 }: BrowseControlsProps) {
   return (
     <div className="glass rounded-lg p-4 md:p-5 space-y-5">
@@ -63,7 +69,7 @@ export default function BrowseControls({
           >
             All
           </button>
-          {CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <button
               key={cat.slug}
               onClick={() => onCategoryChange(cat.name)}

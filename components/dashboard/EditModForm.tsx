@@ -6,7 +6,6 @@ import { Loader2 } from 'lucide-react';
 import GlassCard from '@/components/ui/GlassCard';
 import NeonButton from '@/components/ui/NeonButton';
 import { useToast } from '@/components/ui/ToastProvider';
-import { CATEGORIES } from '@/lib/categories';
 import { updateModDetails } from '@/app/dashboard/edit/[slug]/actions';
 
 interface EditModFormProps {
@@ -15,6 +14,7 @@ interface EditModFormProps {
   initialDescription: string;
   initialCategory: string;
   initialPriceInPaise: number;
+  categories: { slug: string; name: string }[];
 }
 
 export default function EditModForm({
@@ -23,6 +23,7 @@ export default function EditModForm({
   initialDescription,
   initialCategory,
   initialPriceInPaise,
+  categories,
 }: EditModFormProps) {
   const router = useRouter();
   const { showToast } = useToast();
@@ -102,7 +103,7 @@ export default function EditModForm({
             onChange={(e) => setCategory(e.target.value)}
             className="w-full glass rounded-md px-3 py-2.5 text-sm focus:outline-none focus:border-violet/50 transition-all"
           >
-            {CATEGORIES.map((c) => (
+            {categories.map((c) => (
               <option key={c.slug} value={c.name} className="bg-ink">
                 {c.name}
               </option>

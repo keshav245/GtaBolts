@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import GlassCard from '@/components/ui/GlassCard';
 import NeonButton from '@/components/ui/NeonButton';
 import UploadDropzone from '@/components/dashboard/UploadDropzone';
 import { useToast } from '@/components/ui/ToastProvider';
 import { uploadToR2 } from '@/lib/upload-client';
-import { CATEGORIES } from '@/lib/categories';
+import { createClient } from '@/lib/supabase/client';
 import { createMod } from './actions';
 
 function slugify(text: string) {
@@ -33,10 +33,23 @@ export default function UploadModPage() {
   const [slugTouched, setSlugTouched] = useState(false);
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
-  const [category, setCategory] = useState(CATEGORIES[0].name);
+  const [categories, setCategories] = useState<{ slug: string; name: string }[]>([]);
+  const [category, setCategory] = useState('');
   const [screenshots, setScreenshots] = useState<ScreenshotItem[]>([]);
   const [modFileKey, setModFileKey] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<'draft' | 'published' | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from('categories')
+      .select('slug, name')
+      .order('name')
+      .then(({ data }) => {
+        setCategories(data ?? []);
+        if (data && data.length > 0) setCategory((prev) => prev || data[0].name);
+      });
+  }, []);
 
   function handleTitleChange(value: string) {
     setTitle(value);
@@ -162,7 +175,7 @@ export default function UploadModPage() {
               onChange={(e) => setCategory(e.target.value)}
               className="w-full glass rounded-md px-3 py-2.5 text-sm focus:outline-none focus:border-violet/50 transition-all"
             >
-              {CATEGORIES.map((c) => (
+              {categories.map((c) => (
                 <option key={c.slug} value={c.name} className="bg-ink">
                   {c.name}
                 </option>

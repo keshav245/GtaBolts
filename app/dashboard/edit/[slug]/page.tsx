@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import EditModForm from '@/components/dashboard/EditModForm';
 import { createClient } from '@/lib/supabase/server';
 import { requireRole } from '@/lib/auth-guards';
+import { getCategories } from '@/lib/queries/categories';
 
 interface EditModPageProps {
   params: { slug: string };
@@ -10,6 +11,7 @@ interface EditModPageProps {
 export default async function EditModPage({ params }: EditModPageProps) {
   await requireRole('employee');
   const supabase = await createClient();
+  const categories = await getCategories();
 
   // RLS scopes this to mods the signed-in employee owns (or any mod, for an
   // owner) — a mod belonging to someone else simply won't be returned here.
@@ -34,6 +36,7 @@ export default async function EditModPage({ params }: EditModPageProps) {
         initialDescription={mod.description ?? ''}
         initialCategory={mod.category}
         initialPriceInPaise={mod.price_in_paise}
+        categories={categories.map((c) => ({ slug: c.slug, name: c.name }))}
       />
     </div>
   );

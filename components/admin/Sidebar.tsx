@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Crown, ShieldCheck, ListChecks, Users2, BarChart3 } from 'lucide-react';
+import { Crown, ShieldCheck, ListChecks, Users2, BarChart3, Tags } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const ITEMS = [
   { href: '/admin', label: 'Revenue overview', icon: BarChart3 },
   { href: '/admin/roles', label: 'Role management', icon: ShieldCheck },
+  { href: '/admin/categories', label: 'Categories', icon: Tags },
   { href: '/admin/moderation', label: 'Mod moderation', icon: ListChecks },
   { href: '/admin/employees', label: 'Employee audit', icon: Users2 },
   { href: '/admin/users', label: 'User directory', icon: Users2 },

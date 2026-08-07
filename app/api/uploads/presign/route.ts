@@ -24,11 +24,20 @@ export async function POST(request: Request) {
   }
 
   const { fileName, fileType, kind } = await request.json();
-  if (!fileName || !fileType || (kind !== 'mod' && kind !== 'screenshot')) {
-    return NextResponse.json({ error: 'fileName, fileType, and kind ("mod" | "screenshot") are required' }, { status: 400 });
+  if (!fileName || !fileType || (kind !== 'mod' && kind !== 'screenshot' && kind !== 'category')) {
+    return NextResponse.json(
+      { error: 'fileName, fileType, and kind ("mod" | "screenshot" | "category") are required' },
+      { status: 400 }
+    );
   }
 
-  const prefix = kind === 'mod' ? 'mod-files' : 'screenshots';
+  // Category photos are an owner-only action (category management is an
+  // owner-only page), even though this endpoint is otherwise employee-or-owner.
+  if (kind === 'category' && !roleNames.includes('owner')) {
+    return NextResponse.json({ error: 'Owner role required for category images' }, { status: 403 });
+  }
+
+  const prefix = kind === 'mod' ? 'mod-files' : kind === 'screenshot' ? 'screenshots' : 'category-images';
   const key = `${prefix}/${user.id}/${randomUUID()}-${fileName}`;
 
   const command = new PutObjectCommand({ Bucket: R2_BUCKET, Key: key, ContentType: fileType });
