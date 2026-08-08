@@ -7,7 +7,7 @@ import { ToastProvider } from '@/components/ui/ToastProvider';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'GtaMods — Game Mods Marketplace',
+  title: 'GtaBolts — Game Mods Marketplace',
   description: 'Buy and sell verified game mods. Instant delivery, secure payments.',
 };
 

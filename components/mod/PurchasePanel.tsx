@@ -56,7 +56,7 @@ export default function PurchasePanel({ mod }: { mod: ModDetailResult }) {
         amount: order.amount,
         currency: order.currency,
         order_id: order.orderId,
-        name: 'GTAMods',
+        name: 'GtaBolts',
         description: order.modTitle,
         theme: { color: '#8b5cf6' },
         handler: () => {

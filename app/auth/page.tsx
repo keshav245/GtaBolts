@@ -9,7 +9,7 @@ export default function AuthPage() {
       <div className="relative flex flex-col items-center py-16">
         <p className="font-mono text-xs tracking-[0.3em] text-cyan uppercase mb-3">// Access panel</p>
         <h1 className="font-display font-bold text-3xl md:text-4xl mb-8 text-center">
-          Enter <span className="text-gradient">GTAMods</span>
+          Enter <span className="text-gradient">GtaBolts</span>
         </h1>
         <AuthForm />
       </div>

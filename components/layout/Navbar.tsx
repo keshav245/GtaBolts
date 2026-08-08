@@ -59,8 +59,11 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 glass-strong border-b border-white/10">
       <div className="mx-auto max-w-7xl px-4 md:px-8 h-16 flex items-center justify-between gap-4">
-        <Link href="/" className="font-display font-bold text-xl tracking-tight text-gradient shrink-0">
-          GTA<span className="text-white">Mods</span>
+        <Link href="/" className="flex items-center gap-2 shrink-0">
+          <img src="/logo.png" alt="" className="h-8 w-8 object-contain" />
+          <span className="font-display font-bold text-xl tracking-tight text-gradient">
+            GTA<span className="text-white">Bolts</span>
+          </span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
