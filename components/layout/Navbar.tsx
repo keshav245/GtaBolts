@@ -7,12 +7,7 @@ import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { Search, User, ShoppingBag, LogOut, Crown, Wrench } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import NeonButton from '@/components/ui/NeonButton';
-
-const NAV_LINKS = [
-  { href: '/browse', label: 'Browse' },
-  { href: '/category/gta-v', label: 'GTA V' },
-  { href: '/category/gta-online', label: 'GTA Online' },
-];
+import CategoryDropdown from '@/components/layout/CategoryDropdown';
 
 export default function Navbar() {
   const router = useRouter();
@@ -68,15 +63,13 @@ export default function Navbar() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="px-3 py-2 text-sm text-fog hover:text-white transition-colors rounded-md hover:bg-white/5"
-            >
-              {link.label}
-            </Link>
-          ))}
+          <Link
+            href="/browse"
+            className="px-3 py-2 text-sm text-fog hover:text-white transition-colors rounded-md hover:bg-white/5"
+          >
+            Browse
+          </Link>
+          <CategoryDropdown />
         </nav>
 
         <div className="hidden md:flex items-center flex-1 max-w-md">
