@@ -1,4 +1,4 @@
-# GtaMods
+# GtaBolts
 
 Redesigned presentation layer — dark cyberpunk/gamer marketplace UI. Phase 1: Landing page + shared design system.
 
