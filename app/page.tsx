@@ -3,16 +3,19 @@ import PurchaseTicker from '@/components/landing/PurchaseTicker';
 import FeaturedCarousel from '@/components/landing/FeaturedCarousel';
 import CategoryGrid from '@/components/landing/CategoryGrid';
 import FeaturedVideos from '@/components/landing/FeaturedVideos';
+import ContactSection from '@/components/landing/ContactSection';
 import { getPublishedMods, getCategoryCounts } from '@/lib/queries/mods';
 import { getCategories } from '@/lib/queries/categories';
 import { getFeaturedVideos } from '@/lib/queries/videos';
+import { getSiteSettings } from '@/lib/queries/settings';
 
 export default async function LandingPage() {
-  const [mods, counts, categories, videos] = await Promise.all([
+  const [mods, counts, categories, videos, settings] = await Promise.all([
     getPublishedMods(),
     getCategoryCounts(),
     getCategories(),
     getFeaturedVideos(),
+    getSiteSettings(),
   ]);
 
   return (
@@ -22,6 +25,7 @@ export default async function LandingPage() {
       <FeaturedCarousel mods={mods} />
       <CategoryGrid categories={categories} counts={counts} />
       <FeaturedVideos videos={videos} />
+      <ContactSection settings={settings} />
     </>
   );
 }
