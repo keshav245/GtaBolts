@@ -15,6 +15,7 @@ export default function Navbar() {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [roles, setRoles] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     async function loadUserAndRoles() {
@@ -77,6 +78,13 @@ export default function Navbar() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fog-dim" />
             <input
               type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && searchQuery.trim()) {
+                  router.push(`/browse?q=${encodeURIComponent(searchQuery.trim())}`);
+                }
+              }}
               placeholder="Search mods, categories..."
               className="w-full glass rounded-md pl-9 pr-3 py-2 text-sm placeholder:text-fog-dim focus:outline-none focus:border-violet/50 focus:shadow-glow-sm transition-all"
             />

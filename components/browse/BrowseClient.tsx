@@ -5,7 +5,15 @@ import ModCard, { Mod } from '@/components/mods/ModCard';
 import BrowseControls, { SortOption } from '@/components/browse/BrowseControls';
 import EmptyState from '@/components/ui/EmptyState';
 
-export default function BrowseClient({ mods: allMods, categories }: { mods: Mod[]; categories: { slug: string; name: string }[] }) {
+export default function BrowseClient({
+  mods: allMods,
+  categories,
+  initialSearch = '',
+}: {
+  mods: Mod[];
+  categories: { slug: string; name: string }[];
+  initialSearch?: string;
+}) {
   // Real ceiling derived from actual mod prices (rounded up to the nearest
   // 100 for a clean slider max), instead of a hardcoded guess that could
   // silently hide any mod priced above it. Falls back to 1000 if there are
@@ -16,7 +24,7 @@ export default function BrowseClient({ mods: allMods, categories }: { mods: Mod[
     return Math.ceil(highest / 100) * 100;
   }, [allMods]);
 
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(initialSearch);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [sort, setSort] = useState<SortOption>('popular');
   const [maxPrice, setMaxPrice] = useState(priceCeiling);

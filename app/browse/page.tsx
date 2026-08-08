@@ -2,7 +2,11 @@ import BrowseClient from '@/components/browse/BrowseClient';
 import { getPublishedMods } from '@/lib/queries/mods';
 import { getCategories } from '@/lib/queries/categories';
 
-export default async function BrowsePage() {
+interface BrowsePageProps {
+  searchParams: { q?: string };
+}
+
+export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   const [mods, categories] = await Promise.all([getPublishedMods(), getCategories()]);
 
   return (
@@ -12,7 +16,7 @@ export default async function BrowsePage() {
         <h1 className="font-display font-bold text-3xl md:text-4xl">Browse mods</h1>
       </div>
 
-      <BrowseClient mods={mods} categories={categories} />
+      <BrowseClient mods={mods} categories={categories} initialSearch={searchParams.q ?? ''} />
     </div>
   );
 }
