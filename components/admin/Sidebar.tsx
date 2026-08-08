@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Crown, ShieldCheck, ListChecks, Users2, BarChart3, Tags, Youtube } from 'lucide-react';
+import { Crown, ShieldCheck, ListChecks, Users2, BarChart3, Tags, Youtube, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const ITEMS = [
@@ -13,6 +13,7 @@ const ITEMS = [
   { href: '/admin/moderation', label: 'Mod moderation', icon: ListChecks },
   { href: '/admin/employees', label: 'Employee audit', icon: Users2 },
   { href: '/admin/users', label: 'User directory', icon: Users2 },
+  { href: '/admin/settings', label: 'Contact settings', icon: Settings },
 ];
 
 export default function AdminSidebar() {
