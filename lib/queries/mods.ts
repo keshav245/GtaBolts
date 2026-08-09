@@ -15,28 +15,41 @@ interface DbMod {
   created_at: string;
 }
 
-async function toModCard(supabase: Awaited<ReturnType<typeof createClient>>, row: DbMod): Promise<Mod> {
-  const { count } = await supabase
-    .from('purchases')
-    .select('id', { count: 'exact', head: true })
-    .eq('mod_id', row.id)
-    .eq('status', 'completed');
+// Batches purchase-count and rating lookups for a whole list of mods into
+// two queries total, instead of two queries PER mod (the previous version
+// ran 2N database round-trips for a page of N mods — this was the main
+// cause of slow page loads on the homepage/browse/category pages).
+async function toModCards(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  rows: DbMod[]
+): Promise<Mod[]> {
+  if (rows.length === 0) return [];
+  const modIds = rows.map((r) => r.id);
 
-  const { data: ratings } = await supabase.from('mod_ratings').select('rating').eq('mod_id', row.id);
-  const avgRating = ratings && ratings.length > 0 ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length : 0;
+  const [{ data: purchases }, { data: ratings }] = await Promise.all([
+    supabase.from('purchases').select('mod_id').eq('status', 'completed').in('mod_id', modIds),
+    supabase.from('mod_ratings').select('mod_id, rating').in('mod_id', modIds),
+  ]);
 
-  const thumbnailUrl = row.screenshots[0] ? await getScreenshotUrl(row.screenshots[0]) : '/placeholder-mod.jpg';
+  return Promise.all(
+    rows.map(async (row) => {
+      const salesCount = (purchases ?? []).filter((p) => p.mod_id === row.id).length;
+      const modRatings = (ratings ?? []).filter((r) => r.mod_id === row.id);
+      const avgRating = modRatings.length > 0 ? modRatings.reduce((sum, r) => sum + r.rating, 0) / modRatings.length : 0;
+      const thumbnailUrl = row.screenshots[0] ? await getScreenshotUrl(row.screenshots[0]) : '/placeholder-mod.jpg';
 
-  return {
-    slug: row.slug,
-    title: row.title,
-    category: row.category,
-    thumbnailUrl,
-    priceInPaise: row.price_in_paise,
-    downloads: count ?? 0,
-    rating: avgRating,
-    version: row.version,
-  };
+      return {
+        slug: row.slug,
+        title: row.title,
+        category: row.category,
+        thumbnailUrl,
+        priceInPaise: row.price_in_paise,
+        downloads: salesCount,
+        rating: avgRating,
+        version: row.version,
+      };
+    })
+  );
 }
 
 export async function getPublishedMods(): Promise<Mod[]> {
@@ -47,8 +60,7 @@ export async function getPublishedMods(): Promise<Mod[]> {
     .eq('status', 'published')
     .order('created_at', { ascending: false });
 
-  if (!data) return [];
-  return Promise.all(data.map((row) => toModCard(supabase, row as DbMod)));
+  return toModCards(supabase, (data ?? []) as DbMod[]);
 }
 
 export async function getPublishedModsByCategory(categoryName: string): Promise<Mod[]> {
@@ -60,8 +72,7 @@ export async function getPublishedModsByCategory(categoryName: string): Promise<
     .eq('category', categoryName)
     .order('created_at', { ascending: false });
 
-  if (!data) return [];
-  return Promise.all(data.map((row) => toModCard(supabase, row as DbMod)));
+  return toModCards(supabase, (data ?? []) as DbMod[]);
 }
 
 export interface ModDetailResult extends Mod {
@@ -96,39 +107,29 @@ export async function getPublishedModBySlug(slug: string): Promise<ModDetailResu
     // Non-critical — worst case the view count is off by one.
   }
 
-  const modCard = await toModCard(supabase, row);
-  const screenshotUrls = row.screenshots.length
-    ? await Promise.all(row.screenshots.map(getScreenshotUrl))
-    : ['/placeholder-mod.jpg'];
+  const [[modCard], screenshotUrls, { count: ratingCount }, { data: userResult }] = await Promise.all([
+    toModCards(supabase, [row]),
+    row.screenshots.length ? Promise.all(row.screenshots.map(getScreenshotUrl)) : Promise.resolve(['/placeholder-mod.jpg']),
+    supabase.from('mod_ratings').select('id', { count: 'exact', head: true }).eq('mod_id', row.id),
+    supabase.auth.getUser(),
+  ]);
 
-  const { count: ratingCount } = await supabase
-    .from('mod_ratings')
-    .select('id', { count: 'exact', head: true })
-    .eq('mod_id', row.id);
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = userResult.user;
   let currentUserCanRate = false;
   let currentUserRating: number | null = null;
 
   if (user) {
-    const { data: existingRating } = await supabase
-      .from('mod_ratings')
-      .select('rating')
-      .eq('mod_id', row.id)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const [{ data: existingRating }, { data: purchase }] = await Promise.all([
+      supabase.from('mod_ratings').select('rating').eq('mod_id', row.id).eq('user_id', user.id).maybeSingle(),
+      supabase
+        .from('purchases')
+        .select('id')
+        .eq('mod_id', row.id)
+        .eq('user_id', user.id)
+        .eq('status', 'completed')
+        .maybeSingle(),
+    ]);
     currentUserRating = existingRating?.rating ?? null;
-
-    const { data: purchase } = await supabase
-      .from('purchases')
-      .select('id')
-      .eq('mod_id', row.id)
-      .eq('user_id', user.id)
-      .eq('status', 'completed')
-      .maybeSingle();
     currentUserCanRate = !!purchase;
   }
 
