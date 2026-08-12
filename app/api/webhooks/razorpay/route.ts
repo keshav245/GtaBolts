@@ -34,10 +34,21 @@ export async function POST(request: Request) {
     // per the security model, never a top-level import.
     const { supabaseAdmin } = await import('@/lib/supabase/admin');
 
-    await supabaseAdmin
+    // A single order can cover multiple mods (cart checkout) — this one
+    // UPDATE naturally marks every purchase row sharing that order_id as
+    // completed, whether it's one mod or several.
+    const { data: updatedPurchases } = await supabaseAdmin
       .from('purchases')
       .update({ status: 'completed', razorpay_payment_id: payment.id })
-      .eq('razorpay_order_id', payment.order_id);
+      .eq('razorpay_order_id', payment.order_id)
+      .select('user_id, mod_id');
+
+    // Clear the matching items out of the cart now that they're purchased.
+    if (updatedPurchases && updatedPurchases.length > 0) {
+      for (const row of updatedPurchases) {
+        await supabaseAdmin.from('cart_items').delete().eq('user_id', row.user_id).eq('mod_id', row.mod_id);
+      }
+    }
   }
 
   return NextResponse.json({ ok: true });
