@@ -9,6 +9,7 @@ interface UpdateModInput {
   description: string;
   category: string;
   priceInPaise: number;
+  screenshotKeys: string[];
 }
 
 export async function updateModDetails(slug: string, input: UpdateModInput) {
@@ -24,6 +25,7 @@ export async function updateModDetails(slug: string, input: UpdateModInput) {
       description: input.description,
       category: input.category,
       price_in_paise: input.priceInPaise,
+      screenshots: input.screenshotKeys,
       updated_at: new Date().toISOString(),
     })
     .eq('slug', slug);
