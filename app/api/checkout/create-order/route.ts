@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: Request) {
   try {
-    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+       if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
       console.error('Missing RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET env vars');
       return NextResponse.json({ error: 'Payment system is not configured. Contact support.' }, { status: 500 });
     }
