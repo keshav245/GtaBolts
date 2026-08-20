@@ -42,7 +42,13 @@ export default function CartClient({ initialItems }: { initialItems: CartItem[] 
       if (!scriptLoaded) throw new Error('Could not load the payment checkout — check your connection.');
 
       const res = await fetch('/api/checkout/create-cart-order', { method: 'POST' });
-      const order = await res.json();
+
+      let order: any;
+      try {
+        order = await res.json();
+      } catch {
+        throw new Error('Server returned an unexpected response. Please try again.');
+      }
       if (!res.ok) throw new Error(order.error ?? 'Could not start checkout');
 
       setCheckingOut(false);

@@ -3,59 +3,68 @@ import Razorpay from 'razorpay';
 import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  try {
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      console.error('Missing RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET env vars');
+      return NextResponse.json({ error: 'Payment system is not configured. Contact support.' }, { status: 500 });
+    }
 
-  if (!user) {
-    return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
-  }
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  const { modSlug } = await request.json();
-  if (!modSlug) {
-    return NextResponse.json({ error: 'modSlug is required' }, { status: 400 });
-  }
+    if (!user) {
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
+    }
 
-  const { data: mod } = await supabase
-    .from('mods')
-    .select('id, price_in_paise, title')
-    .eq('slug', modSlug)
-    .eq('status', 'published')
-    .single();
+    const { modSlug } = await request.json();
+    if (!modSlug) {
+      return NextResponse.json({ error: 'modSlug is required' }, { status: 400 });
+    }
 
-  if (!mod) {
-    return NextResponse.json({ error: 'Mod not found' }, { status: 404 });
-  }
+    const { data: mod } = await supabase
+      .from('mods')
+      .select('id, price_in_paise, title')
+      .eq('slug', modSlug)
+      .eq('status', 'published')
+      .single();
 
-  const { data: existing } = await supabase
-    .from('purchases')
-    .select('id, status')
-    .eq('user_id', user.id)
-    .eq('mod_id', mod.id)
-    .maybeSingle();
+    if (!mod) {
+      return NextResponse.json({ error: 'Mod not found' }, { status: 404 });
+    }
 
-  if (existing?.status === 'completed') {
-    return NextResponse.json({ error: 'You already own this mod' }, { status: 400 });
-  }
+    const { data: existing } = await supabase
+      .from('purchases')
+      .select('id, status')
+      .eq('user_id', user.id)
+      .eq('mod_id', mod.id)
+      .maybeSingle();
 
-  const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID!,
-    key_secret: process.env.RAZORPAY_KEY_SECRET!,
-  });
+    if (existing?.status === 'completed') {
+      return NextResponse.json({ error: 'You already own this mod' }, { status: 400 });
+    }
 
-  const order = await razorpay.orders.create({
-    amount: mod.price_in_paise,
-    currency: 'INR',
-    receipt: `${user.id}-${mod.id}`.slice(0, 40),
-    notes: { modId: mod.id, userId: user.id },
-  });
+    if (mod.price_in_paise < 100) {
+      // Razorpay requires a minimum order amount (₹1 = 100 paise).
+      return NextResponse.json({ error: 'This mod is priced too low to process.' }, { status: 400 });
+    }
 
-  // Pending purchase row, tied to this order. Completion (status -> 'completed')
-  // only ever happens in the webhook handler once Razorpay confirms payment.
-  const { error: upsertError } = await supabase
-    .from('purchases')
-    .upsert(
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+
+    const order = await razorpay.orders.create({
+      amount: mod.price_in_paise,
+      currency: 'INR',
+      receipt: `${user.id}-${mod.id}`.slice(0, 40),
+      notes: { modId: mod.id, userId: user.id },
+    });
+
+    // Pending purchase row, tied to this order. Completion (status -> 'completed')
+    // only ever happens in the webhook handler once Razorpay confirms payment.
+    const { error: upsertError } = await supabase.from('purchases').upsert(
       {
         user_id: user.id,
         mod_id: mod.id,
@@ -66,15 +75,23 @@ export async function POST(request: Request) {
       { onConflict: 'user_id,mod_id' }
     );
 
-  if (upsertError) {
-    return NextResponse.json({ error: upsertError.message }, { status: 500 });
-  }
+    if (upsertError) {
+      return NextResponse.json({ error: upsertError.message }, { status: 500 });
+    }
 
-  return NextResponse.json({
-    orderId: order.id,
-    amount: order.amount,
-    currency: order.currency,
-    keyId: process.env.RAZORPAY_KEY_ID,
-    modTitle: mod.title,
-  });
+    return NextResponse.json({
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      keyId: process.env.RAZORPAY_KEY_ID,
+      modTitle: mod.title,
+    });
+  } catch (err) {
+    // Without this catch, any thrown error (e.g. Razorpay rejecting bad
+    // credentials) produced a non-JSON response — exactly what caused
+    // "Unexpected end of JSON input" on the client.
+    console.error('create-order failed:', err);
+    const message = err instanceof Error ? err.message : 'Checkout failed unexpectedly.';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

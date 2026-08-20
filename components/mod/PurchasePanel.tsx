@@ -27,7 +27,13 @@ export default function PurchasePanel({ mod }: { mod: ModDetailResult }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ modSlug: mod.slug }),
       });
-      const order = await res.json();
+
+      let order: any;
+      try {
+        order = await res.json();
+      } catch {
+        throw new Error('Server returned an unexpected response. Please try again.');
+      }
       if (!res.ok) throw new Error(order.error ?? 'Could not start checkout');
 
       setLoading(false);
