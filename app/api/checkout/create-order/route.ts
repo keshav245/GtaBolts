@@ -86,11 +86,17 @@ export async function POST(request: Request) {
       keyId: process.env.RAZORPAY_KEY_ID,
       modTitle: mod.title,
     });
-  } catch (err) {
-    // Without this catch, any thrown error (e.g. Razorpay rejecting bad
-    // credentials) produced a non-JSON response — exactly what caused
-    // "Unexpected end of JSON input" on the client.
+ } catch (err) {
     console.error('create-order failed:', err);
+    // Extract Razorpay API errors (they are objects, not Error instances)
+    if (err && typeof err === 'object' && 'statusCode' in err) {
+      const rzpErr = err as { statusCode: number; error?: { description?: string } };
+      const description = rzpErr.error?.description ?? 'Razorpay error';
+      return NextResponse.json(
+        { error: `Payment error (${rzpErr.statusCode}): ${description}` },
+        { status: 500 }
+      );
+    }
     const message = err instanceof Error ? err.message : 'Checkout failed unexpectedly.';
     return NextResponse.json({ error: message }, { status: 500 });
   }
