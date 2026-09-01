@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { Download, Star } from 'lucide-react';
 import GlassCard from '@/components/ui/GlassCard';
-import AddToCartButton from '@/components/cart/AddToCartButton';
 import { formatPrice, formatCount } from '@/lib/utils';
 
 export interface Mod {
@@ -22,16 +21,14 @@ export default function ModCard({ mod }: { mod: Mod }) {
     <Link href={`/mod/${mod.slug}`}>
       <GlassCard reticle className="group overflow-hidden">
         <div className="relative aspect-video overflow-hidden">
+          {/* Plain <img>, not next/image — these are freshly-signed, expiring
+              R2 URLs; running them through Next's image optimizer adds no
+              benefit and was hanging on the server-side fetch. */}
           <img
             src={mod.thumbnailUrl}
             alt={mod.title}
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
-
-          <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <AddToCartButton modSlug={mod.slug} variant="icon" />
-          </div>
-
           <div className="absolute top-2 right-2 font-mono text-xs px-2 py-1 rounded bg-void/70 backdrop-blur-sm border border-violet/40 text-violet-bright">
             {formatPrice(mod.priceInPaise)}
           </div>

@@ -5,11 +5,30 @@ import { useRouter } from 'next/navigation';
 import { Eye, Download, Star, ShieldCheck, Loader2 } from 'lucide-react';
 import GlassCard from '@/components/ui/GlassCard';
 import NeonButton from '@/components/ui/NeonButton';
-import AddToCartButton from '@/components/cart/AddToCartButton';
 import { useToast } from '@/components/ui/ToastProvider';
 import { formatPrice, formatCount } from '@/lib/utils';
-import { loadRazorpayScript } from '@/lib/razorpay-client';
 import type { ModDetailResult } from '@/lib/queries/mods';
+
+declare global {
+  interface Window {
+    Razorpay: new (options: Record<string, unknown>) => { open: () => void };
+  }
+}
+
+function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (document.getElementById('razorpay-checkout-js')) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.id = 'razorpay-checkout-js';
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
 
 export default function PurchasePanel({ mod }: { mod: ModDetailResult }) {
   const router = useRouter();
@@ -27,13 +46,7 @@ export default function PurchasePanel({ mod }: { mod: ModDetailResult }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ modSlug: mod.slug }),
       });
-
-      let order: any;
-      try {
-        order = await res.json();
-      } catch {
-        throw new Error('Server returned an unexpected response. Please try again.');
-      }
+      const order = await res.json();
       if (!res.ok) throw new Error(order.error ?? 'Could not start checkout');
 
       setLoading(false);
@@ -69,18 +82,15 @@ export default function PurchasePanel({ mod }: { mod: ModDetailResult }) {
       </div>
       <p className="text-xs text-fog-dim mb-5">One-time purchase · lifetime access</p>
 
-      <div className="space-y-2 mb-4">
-        <NeonButton size="lg" className="w-full" onClick={handleBuyNow} disabled={loading}>
-          {loading ? (
-            <span className="flex items-center justify-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" /> Starting checkout...
-            </span>
-          ) : (
-            'Buy now'
-          )}
-        </NeonButton>
-        <AddToCartButton modSlug={mod.slug} variant="full" className="w-full" />
-      </div>
+      <NeonButton size="lg" className="w-full mb-4" onClick={handleBuyNow} disabled={loading}>
+        {loading ? (
+          <span className="flex items-center justify-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" /> Starting checkout...
+          </span>
+        ) : (
+          'Buy now'
+        )}
+      </NeonButton>
 
       <div className="grid grid-cols-3 gap-2 mb-5">
         <div className="text-center py-2 rounded-md bg-white/5">

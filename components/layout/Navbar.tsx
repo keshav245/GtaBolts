@@ -8,7 +8,6 @@ import { Search, User, ShoppingBag, LogOut, Crown, Wrench } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import NeonButton from '@/components/ui/NeonButton';
 import CategoryDropdown from '@/components/layout/CategoryDropdown';
-import CartIcon from '@/components/cart/CartIcon';
 
 export default function Navbar() {
   const router = useRouter();
@@ -96,8 +95,6 @@ export default function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-3 shrink-0">
-          <CartIcon />
-
           <Link href="/library" className="p-2 text-fog hover:text-cyan transition-colors" aria-label="Your library">
             <ShoppingBag className="w-5 h-5" />
           </Link>

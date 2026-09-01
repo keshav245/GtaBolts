@@ -13,13 +13,11 @@ export default function SettingsManager({ initialSettings }: { initialSettings: 
   const [contactEmail, setContactEmail] = useState(initialSettings.contactEmail ?? '');
   const [discordUrl, setDiscordUrl] = useState(initialSettings.discordUrl ?? '');
   const [twitterUrl, setTwitterUrl] = useState(initialSettings.twitterUrl ?? '');
-  const [telegramUrl, setTelegramUrl] = useState(initialSettings.telegramUrl ?? '');
-  const [instagramUrl, setInstagramUrl] = useState(initialSettings.instagramUrl ?? '');
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
     setSaving(true);
-    const result = await updateSiteSettings({ contactEmail, discordUrl, twitterUrl, telegramUrl, instagramUrl });
+    const result = await updateSiteSettings({ contactEmail, discordUrl, twitterUrl });
     setSaving(false);
 
     if (result.ok) {
@@ -53,28 +51,6 @@ export default function SettingsManager({ initialSettings }: { initialSettings: 
           value={discordUrl}
           onChange={(e) => setDiscordUrl(e.target.value)}
           placeholder="https://discord.gg/..."
-          className="w-full glass rounded-md px-3 py-2.5 text-sm placeholder:text-fog-dim focus:outline-none focus:border-violet/50 focus:shadow-glow-sm transition-all"
-        />
-      </div>
-
-      <div>
-        <label className="text-xs font-mono uppercase tracking-wider text-fog-dim mb-1.5 block">Telegram link</label>
-        <input
-          type="text"
-          value={telegramUrl}
-          onChange={(e) => setTelegramUrl(e.target.value)}
-          placeholder="https://t.me/..."
-          className="w-full glass rounded-md px-3 py-2.5 text-sm placeholder:text-fog-dim focus:outline-none focus:border-violet/50 focus:shadow-glow-sm transition-all"
-        />
-      </div>
-
-      <div>
-        <label className="text-xs font-mono uppercase tracking-wider text-fog-dim mb-1.5 block">Instagram link</label>
-        <input
-          type="text"
-          value={instagramUrl}
-          onChange={(e) => setInstagramUrl(e.target.value)}
-          placeholder="https://instagram.com/..."
           className="w-full glass rounded-md px-3 py-2.5 text-sm placeholder:text-fog-dim focus:outline-none focus:border-violet/50 focus:shadow-glow-sm transition-all"
         />
       </div>
