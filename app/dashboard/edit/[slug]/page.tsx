@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation';
 import EditModForm from '@/components/dashboard/EditModForm';
 import { createClient } from '@/lib/supabase/server';
-import { getScreenshotUrl } from '@/lib/r2';
 import { requireRole } from '@/lib/auth-guards';
+import { getCategories } from '@/lib/queries/categories';
 
 interface EditModPageProps {
   params: { slug: string };
@@ -11,25 +11,17 @@ interface EditModPageProps {
 export default async function EditModPage({ params }: EditModPageProps) {
   await requireRole('employee');
   const supabase = await createClient();
+  const categories = await getCategories();
 
   // RLS scopes this to mods the signed-in employee owns (or any mod, for an
   // owner) — a mod belonging to someone else simply won't be returned here.
   const { data: mod } = await supabase
     .from('mods')
-    .select('title, description, category, price_in_paise, screenshots')
+    .select('title, description, category, price_in_paise')
     .eq('slug', params.slug)
     .maybeSingle();
 
   if (!mod) notFound();
-
-  const { data: categoryRows } = await supabase.from('categories').select('slug, name').order('name');
-
-  const existingScreenshots = await Promise.all(
-    (mod.screenshots as string[]).map(async (key) => ({
-      key,
-      url: await getScreenshotUrl(key),
-    }))
-  );
 
   return (
     <div>
@@ -44,8 +36,7 @@ export default async function EditModPage({ params }: EditModPageProps) {
         initialDescription={mod.description ?? ''}
         initialCategory={mod.category}
         initialPriceInPaise={mod.price_in_paise}
-        initialScreenshots={existingScreenshots}
-        categories={categoryRows ?? []}
+        categories={categories.map((c) => ({ slug: c.slug, name: c.name }))}
       />
     </div>
   );

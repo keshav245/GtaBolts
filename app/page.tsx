@@ -1,5 +1,5 @@
 import Hero from '@/components/landing/Hero';
-import ActivityTicker from '@/components/landing/ActivityTicker';
+import PurchaseTicker from '@/components/landing/PurchaseTicker';
 import FeaturedCarousel from '@/components/landing/FeaturedCarousel';
 import CategoryGrid from '@/components/landing/CategoryGrid';
 import FeaturedVideos from '@/components/landing/FeaturedVideos';
@@ -8,22 +8,20 @@ import { getPublishedMods, getCategoryCounts } from '@/lib/queries/mods';
 import { getCategories } from '@/lib/queries/categories';
 import { getFeaturedVideos } from '@/lib/queries/videos';
 import { getSiteSettings } from '@/lib/queries/settings';
-import { getActivityFeed } from '@/lib/queries/activity';
 
 export default async function LandingPage() {
-  const [mods, counts, categories, videos, settings, activity] = await Promise.all([
+  const [mods, counts, categories, videos, settings] = await Promise.all([
     getPublishedMods(),
     getCategoryCounts(),
     getCategories(),
     getFeaturedVideos(),
     getSiteSettings(),
-    getActivityFeed(),
   ]);
 
   return (
     <>
       <Hero />
-      <ActivityTicker items={activity} />
+      <PurchaseTicker />
       <FeaturedCarousel mods={mods} />
       <CategoryGrid categories={categories} counts={counts} />
       <FeaturedVideos videos={videos} />

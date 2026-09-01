@@ -8,8 +8,6 @@ interface UpdateSettingsInput {
   contactEmail: string;
   discordUrl: string;
   twitterUrl: string;
-  telegramUrl: string;
-  instagramUrl: string;
 }
 
 export async function updateSiteSettings(input: UpdateSettingsInput) {
@@ -22,8 +20,6 @@ export async function updateSiteSettings(input: UpdateSettingsInput) {
       contact_email: input.contactEmail.trim() || null,
       discord_url: input.discordUrl.trim() || null,
       twitter_url: input.twitterUrl.trim() || null,
-      telegram_url: input.telegramUrl.trim() || null,
-      instagram_url: input.instagramUrl.trim() || null,
       updated_at: new Date().toISOString(),
     })
     .eq('id', 1);
